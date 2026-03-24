@@ -1,2 +1,2 @@
 # bank-churn-project
-college major project
+# college major project
