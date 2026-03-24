@@ -1,1 +1,1 @@
-# bank-churn-project (college major project)
+# Bank Churn Project
