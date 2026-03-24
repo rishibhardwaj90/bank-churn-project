@@ -1,67 +1,61 @@
 from flask import Flask, render_template, request
-import pandas as pd
 import joblib
+import numpy as np
 import os
+import logging
 
 app = Flask(__name__)
 
-# Load model & scaler
-model = joblib.load("models/best_model.pkl")
-scaler = joblib.load("models/scaler.pkl")
+# Logging setup
+logging.basicConfig(level=logging.INFO)
 
-# Load feature columns
-feature_columns = pd.read_csv("data/processed/features.csv").columns
+# Load model
+model_path = os.path.join("models", "best_model.pkl")
+model = joblib.load(model_path)
 
-@app.route("/")
+@app.route('/')
 def home():
-    return render_template("index.html")
+    return render_template('index.html')
 
-@app.route("/predict", methods=["POST"])
+@app.route('/predict', methods=['POST'])
 def predict():
     try:
-        input_dict = {
-            "CreditScore": int(request.form["creditscore"]),
-            "Gender": int(request.form["gender"]),
-            "Age": int(request.form["age"]),
-            "Tenure": int(request.form["tenure"]),
-            "Balance": float(request.form["balance"]),
-            "NumOfProducts": int(request.form["products"]),
-            "HasCrCard": int(request.form["card"]),
-            "IsActiveMember": int(request.form["active"]),
-            "EstimatedSalary": float(request.form["salary"]),
-            "Geography_Germany": 1 if request.form["geography"] == "Germany" else 0,
-            "Geography_Spain": 1 if request.form["geography"] == "Spain" else 0
-        }
+        # Get inputs
+        credit_score = request.form.get('credit_score')
+        age = request.form.get('age')
+        balance = request.form.get('balance')
+        gender = request.form.get('gender')
 
-        input_df = pd.DataFrame([input_dict])
+        # Validation
+        if not all([credit_score, age, balance, gender]):
+            return render_template('index.html', error="All fields are required")
 
-        # Match training columns
-        input_df = input_df.reindex(columns=feature_columns, fill_value=0)
+        credit_score = int(credit_score)
+        age = int(age)
+        balance = float(balance)
+        gender = int(gender)
 
-        # Apply scaling only if needed
-        if model.__class__.__name__ in ["LogisticRegression", "SVC"]:
-            input_processed = scaler.transform(input_df)
-        else:
-            input_processed = input_df
+        # Range validation
+        if age < 18 or age > 100:
+            return render_template('index.html', error="Invalid age")
 
-        prediction = model.predict(input_processed)[0]
-        probability = model.predict_proba(input_processed)[0][1]
+        if credit_score < 300 or credit_score > 900:
+            return render_template('index.html', error="Invalid credit score")
 
-        if probability > 0.7:
-            risk = "High Risk"
-        elif probability > 0.3:
-            risk = "Medium Risk"
-        else:
-            risk = "Low Risk"
+        # Model input
+        features = np.array([[credit_score, age, balance, gender]])
 
-        return render_template("index.html",
-                               prediction_text=f"Churn Probability: {round(probability*100,2)}%",
-                               risk=risk)
+        prediction = model.predict(features)[0]
+
+        result = "Customer will churn !!" if prediction == 1 else "Customer will stay."
+
+        logging.info(f"Prediction success: {features} → {prediction}")
+
+        return render_template('index.html', result=result)
 
     except Exception as e:
-        return str(e)
-
-port = int(os.environ.get("PORT", 10000))
+        logging.error(f"Error: {str(e)}")
+        return render_template('index.html', error="Something went wrong")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
