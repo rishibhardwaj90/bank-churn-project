@@ -6,11 +6,11 @@ import os
 app = Flask(__name__)
 
 # Load model & scaler
-model = joblib.load("C:/Users/Lenovo/Major Project/bank-churn-project/models/best_model.pkl")
-scaler = joblib.load("C:/Users/Lenovo/Major Project/bank-churn-project/models/scaler.pkl")
+model = joblib.load("models/best_model.pkl")
+scaler = joblib.load("models/scaler.pkl")
 
 # Load feature columns
-feature_columns = pd.read_csv("C:/Users/Lenovo/Major Project/bank-churn-project/data/processed/features.csv").columns
+feature_columns = pd.read_csv("data/processed/features.csv").columns
 
 @app.route("/")
 def home():
