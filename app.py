@@ -1,37 +1,27 @@
-from flask import Flask, request, jsonify
-import pandas as pd
-import traceback
-from churn_model import predict_churn
+from flask import Flask, render_template, request, jsonify
+import churn_model
 app = Flask(__name__)
-from flask import render_template
+@app.route("/")
+def home():
+    return render_template("index.html")
 @app.route("/predict", methods=["POST"])
 def predict():
-    try:
-        data = request.form.to_dict()
-        numeric_cols = [
-            "CreditScore",
-            "Age",
-            "Tenure",
-            "Balance",
-            "NumOfProducts",
-            "EstimatedSalary"
-        ]
-        for col in numeric_cols:
-            if col in data:
-                data[col] = float(data[col])
-        input_df = pd.DataFrame([data])
-        result = predict_churn(input_df)
-        if isinstance(result, str):
-            return result
-        prediction = int(result["Churn_Prediction"].iloc[0])
-        probability = float(result["Churn_Probability"].iloc[0])
-        return f"""
-        <h2>Prediction Result</h2>
-        <p>Churn Prediction: {prediction}</p>
-        <p>Churn Probability: {probability:.2f}</p>
-        <a href="/">Go Back</a>
-        """
-    except Exception as e:
-        return f"Error: {str(e)}"
+    data = request.get_json()
+    input_data = {
+        "CreditScore": data["CreditScore"],
+        "Gender": data["Gender"],
+        "Geography": data["Geography"],
+        "Tenure": data["Tenure"],
+        "Balance": data["Balance"],
+        "NumOfProducts": data["NumOfProducts"],
+        "HasCrCard": data["HasCrCard"],
+        "IsActiveMember": data["IsActiveMember"],
+        "EstimatedSalary": data["EstimatedSalary"]
+    }
+    prediction, probability = churn_model.predict(input_data)
+    return jsonify({
+        "Churn_Prediction": int(prediction),
+        "Churn_Probability": float(probability)
+    })
 if __name__ == "__main__":
     app.run(debug=True)
