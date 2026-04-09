@@ -1,57 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Churn Prediction</title>
+    <meta charset="UTF-8">
+    <title>Bank Customer Churn Prediction</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h2>Bank Customer Churn Prediction</h2>
+<div class="container">
+    <h1>Bank Customer Churn Prediction</h1>
 
-<form action="/predict" method="post">
+    <form id="churnForm">
+        <input type="number" placeholder="Credit Score" id="creditScore" required>
+        
+        <select id="gender">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+        </select>
 
-Credit Score: <input type="number" name="creditscore"><br><br>
+        <select id="geography">
+            <option value="France">France</option>
+            <option value="Germany">Germany</option>
+            <option value="Spain">Spain</option>
+        </select>
 
-Gender:
-<select name="gender">
-<option value="1">Male</option>
-<option value="0">Female</option>
-</select><br><br>
+        <input type="number" placeholder="Tenure" id="tenure" required>
+        <input type="number" placeholder="Balance" id="balance" required>
+        <input type="number" placeholder="Number of Products" id="products" required>
 
-Age: <input type="number" name="age"><br><br>
+        <select id="card">
+            <option value="1">Has Credit Card</option>
+            <option value="0">No Credit Card</option>
+        </select>
 
-Tenure: <input type="number" name="tenure"><br><br>
+        <select id="active">
+            <option value="1">Active Member</option>
+            <option value="0">Inactive Member</option>
+        </select>
 
-Balance: <input type="number" name="balance"><br><br>
+        <input type="number" placeholder="Estimated Salary" id="salary" required>
 
-Products: <input type="number" name="products"><br><br>
+        <button type="submit">Predict</button>
+    </form>
 
-Has Card:
-<select name="card">
-<option value="1">Yes</option>
-<option value="0">No</option>
-</select><br><br>
+    <div id="result"></div>
+</div>
 
-Active Member:
-<select name="active">
-<option value="1">Yes</option>
-<option value="0">No</option>
-</select><br><br>
+<script>
+document.getElementById("churnForm").addEventListener("submit", async function(e){
+    e.preventDefault();
 
-Salary: <input type="number" name="salary"><br><br>
+    const data = {
+        CreditScore: parseInt(document.getElementById("creditScore").value),
+        Gender: document.getElementById("gender").value,
+        Geography: document.getElementById("geography").value,
+        Tenure: parseInt(document.getElementById("tenure").value),
+        Balance: parseFloat(document.getElementById("balance").value),
+        NumOfProducts: parseInt(document.getElementById("products").value),
+        HasCrCard: parseInt(document.getElementById("card").value),
+        IsActiveMember: parseInt(document.getElementById("active").value),
+        EstimatedSalary: parseFloat(document.getElementById("salary").value)
+    };
 
-Geography:
-<select name="geography">
-<option value="France">France</option>
-<option value="Germany">Germany</option>
-<option value="Spain">Spain</option>
-</select><br><br>
+    const response = await fetch("http://127.0.0.1:5000/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
 
-<button type="submit">Predict</button>
+    const result = await response.json();
 
-</form>
-
-<h3>{{ prediction_text }}</h3>
-<h3>{{ risk }}</h3>
+    document.getElementById("result").innerHTML = 
+        `<h2>Prediction: ${result.Churn_Prediction}</h2>
+         <h3>Probability: ${result.Churn_Probability.toFixed(2)}</h3>`;
+});
+</script>
 
 </body>
 </html>
