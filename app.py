@@ -18,7 +18,7 @@ def predict():
         "IsActiveMember": data["IsActiveMember"],
         "EstimatedSalary": data["EstimatedSalary"]
     }
-    prediction, probability = churn_model.predict(input_data)
+    prediction, probability = predict_churn.predict(input_data)
     return jsonify({
         "Churn_Prediction": int(prediction),
         "Churn_Probability": float(probability)
