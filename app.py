@@ -4,9 +4,6 @@ import traceback
 from churn_model import predict_churn
 app = Flask(__name__)
 from flask import render_template
-@app.route('/')
-def home():
-    return render_template("index.html")
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
@@ -35,5 +32,6 @@ def predict():
         <a href="/">Go Back</a>
         """
     except Exception as e:
-        return f"Error: {str(e)}"if __name__ == "__main__":
+        return f"Error: {str(e)}"
+if __name__ == "__main__":
     app.run(debug=True)
