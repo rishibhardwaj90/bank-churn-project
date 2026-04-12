@@ -10,10 +10,14 @@ def home():
 def predict():
     try:
         data = request.get_json()
+        if data["Gender"] == "Male":
+            data["Gender"] = 1
+        else:
+            data["Gender"] = 0
+        geo_map = {"France":0, "Germany":1, "Spain":2}
+        data["Geography"] = geo_map.get(data["Geography"],0)
         input_df = pd.DataFrame([data])
         result = churn_model.predict_churn(input_df)
-        if isinstance(result, str):
-            return jsonify({"error": result})
         prediction = int(result["Churn_Prediction"].iloc[0])
         probability = float(result["Churn_Probability"].iloc[0])
         return jsonify({
