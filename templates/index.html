@@ -10,20 +10,17 @@
             transition: 0.3s;
         }
 
-        /* LIGHT MODE */
         body.light-mode {
             background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-            color: #111;
         }
 
-        /* DARK MODE */
         body.dark-mode {
             background: linear-gradient(135deg, #1f2937, #374151);
             color: white;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 800px;
             margin: 40px auto;
             padding: 20px;
             border-radius: 15px;
@@ -34,40 +31,52 @@
             background: #2d3748;
         }
 
+        /* COMPACT GRID */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
         input, select {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
+            padding: 8px;
             border-radius: 8px;
-        }
-
-        input::placeholder {
-            color: #9ca3af;
-        }
-
-        body.dark-mode input::placeholder {
-            color: #d1d5db;
+            width: 100%;
         }
 
         button {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             background: #2563eb;
             color: white;
             border: none;
             border-radius: 10px;
+            margin-top: 10px;
         }
 
+        /* SMALL TOGGLE BUTTON */
         .toggle-btn {
             position: absolute;
-            top: 20px;
+            top: 15px;
             right: 20px;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 6px;
+            background: #6b7280;
+            color: white;
+            cursor: pointer;
         }
 
         #result {
             text-align: center;
             margin-top: 15px;
             font-weight: bold;
+        }
+
+        #probability {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 5px;
         }
 
         #explanation {
@@ -79,17 +88,20 @@
 
 <body class="light-mode">
 
-<button class="toggle-btn" onclick="toggleMode()">Toggle Mode</button>
+<button class="toggle-btn" onclick="toggleMode()">Mode</button>
 
 <div class="container">
     <h2 style="text-align:center;">Churn Prediction</h2>
 
-    <input id="creditScore" type="number" placeholder="300 - 900" min="300" max="900">
-    <input id="age" type="number" placeholder="18 - 100" min="18" max="100">
-    <input id="tenure" type="number" placeholder="0 - 10" min="0" max="10">
-    <input id="balance" type="number" placeholder="0 - 250000" min="0" max="250000">
-    <input id="products" type="number" placeholder="1 - 4" min="1" max="4">
-    <input id="salary" type="number" placeholder="10000 - 200000" min="10000" max="200000">
+    <!-- GRID INPUTS -->
+    <div class="grid">
+        <input id="creditScore" type="number" placeholder="Credit Score (300-900)">
+        <input id="age" type="number" placeholder="Age (18-100)">
+        <input id="tenure" type="number" placeholder="Tenure (0-10)">
+        <input id="balance" type="number" placeholder="Balance">
+        <input id="products" type="number" placeholder="Products (1-4)">
+        <input id="salary" type="number" placeholder="Salary">
+    </div>
 
     <select id="gender">
         <option>Male</option>
@@ -105,7 +117,9 @@
     <button onclick="predict()">Predict</button>
 
     <div id="result"></div>
+    <div id="probability"></div>
 
+    <!-- Graph -->
     <div style="max-width: 400px; margin: 30px auto;">
         <canvas id="chart"></canvas>
     </div>
@@ -121,16 +135,6 @@ function toggleMode() {
     document.body.classList.toggle("light-mode");
 }
 
-function validateInputs(data) {
-    if (data.CreditScore < 300 || data.CreditScore > 900) return "Invalid Credit Score";
-    if (data.Age < 18 || data.Age > 100) return "Invalid Age";
-    if (data.Tenure < 0 || data.Tenure > 10) return "Invalid Tenure";
-    if (data.Balance < 0) return "Invalid Balance";
-    if (data.NumOfProducts < 1 || data.NumOfProducts > 4) return "Invalid Products";
-    if (data.EstimatedSalary < 10000) return "Invalid Salary";
-    return null;
-}
-
 function predict() {
 
     const data = {
@@ -144,12 +148,6 @@ function predict() {
         Geography: geography.value
     };
 
-    let error = validateInputs(data);
-    if (error) {
-        alert(error);
-        return;
-    }
-
     fetch("/predict_churn", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -158,13 +156,17 @@ function predict() {
     .then(res => res.json())
     .then(data => {
 
+        let color = data.Churn_Prediction === 1 ? "red" : "green";
+
         // RESULT TEXT
         document.getElementById("result").innerHTML =
-            data.Churn_Prediction === 1
-            ? "<span style='color:red'>Customer will CHURN</span>"
-            : "<span style='color:green'>Customer is SAFE</span>";
+            `<span style="color:${color}">Customer will ${data.Churn_Prediction === 1 ? "CHURN" : "STAY"}</span>`;
 
-        // CHART FIXED SIZE
+        // PROBABILITY
+        document.getElementById("probability").innerHTML =
+            `<span style="color:${color}">Probability: ${(data.Churn_Probability * 100).toFixed(2)}%</span>`;
+
+        // GRAPH
         if (chart) chart.destroy();
 
         chart = new Chart(document.getElementById("chart"), {
@@ -181,12 +183,9 @@ function predict() {
             }
         });
 
-        // EXPLANATION FIX
-        const explanationDiv = document.getElementById("explanation");
-        explanationDiv.innerHTML = `
-            <h3>Why churn?</h3>
-            <p>${data.explanation}</p>
-        `;
+        // EXPLANATION
+        document.getElementById("explanation").innerHTML =
+            `<h3>Why churn?</h3><p>${data.explanation}</p>`;
     });
 }
 </script>
