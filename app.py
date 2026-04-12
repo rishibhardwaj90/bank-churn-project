@@ -1,31 +1,36 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import churn_model
-import os
 app = Flask(__name__)
 @app.route("/")
 def home():
     return render_template("index.html")
+def generate_explanation(df):
+    reasons = []
+    if df["Age"].iloc[0] > 50:
+        reasons.append("Higher age increases churn risk")
+    if df["Balance"].iloc[0] > 100000:
+        reasons.append("High balance customer")
+    if df["NumOfProducts"].iloc[0] <= 1:
+        reasons.append("Low product usage")
+    if len(reasons) == 0:
+        return "No strong churn indicators"
+    return ", ".join(reasons)
 @app.route("/predict_churn", methods=["POST"])
 def predict():
     try:
         data = request.get_json()
-        if data["Gender"] == "Male":
-            data["Gender"] = 1
-        else:
-            data["Gender"] = 0
-        geo_map = {"France":0, "Germany":1, "Spain":2}
-        data["Geography"] = geo_map.get(data["Geography"],0)
         input_df = pd.DataFrame([data])
         result = churn_model.predict_churn(input_df)
         prediction = int(result["Churn_Prediction"].iloc[0])
         probability = float(result["Churn_Probability"].iloc[0])
+        explanation = generate_explanation(input_df)
         return jsonify({
             "Churn_Prediction": prediction,
-            "Churn_Probability": probability
+            "Churn_Probability": probability,
+            "explanation": explanation
         })
     except Exception as e:
         return jsonify({"error": str(e)})
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)

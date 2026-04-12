@@ -1,193 +1,194 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Churn Predictor</title>
+    <title>Churn Prediction</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial;
+            transition: 0.3s;
+        }
 
-<style>
-body.dark {
-    background: #121212;
-    color: white;
-}
-body.light {
-    background: #f5f5f5;
-    color: black;
-}
-.card {
-    border-radius: 15px;
-}
-.spinner {
-    display: none;
-}
-</style>
+        /* LIGHT MODE */
+        body.light-mode {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #111;
+        }
+
+        /* DARK MODE */
+        body.dark-mode {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            color: white;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            border-radius: 15px;
+            background: white;
+        }
+
+        body.dark-mode .container {
+            background: #2d3748;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+        }
+
+        input::placeholder {
+            color: #9ca3af;
+        }
+
+        body.dark-mode input::placeholder {
+            color: #d1d5db;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 10px;
+        }
+
+        .toggle-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        #result {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        #explanation {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
 </head>
 
-<body class="dark">
+<body class="light-mode">
 
-<div class="container mt-3 text-end">
-    <button onclick="toggleMode()" class="btn btn-secondary">Toggle Mode</button>
-</div>
+<button class="toggle-btn" onclick="toggleMode()">Toggle Mode</button>
 
-<div class="container text-center mt-3">
-    <h1>Churn Prediction</h1>
-</div>
+<div class="container">
+    <h2 style="text-align:center;">Churn Prediction</h2>
 
-<div class="container mt-4">
-<div class="card p-4 shadow">
+    <input id="creditScore" type="number" placeholder="300 - 900" min="300" max="900">
+    <input id="age" type="number" placeholder="18 - 100" min="18" max="100">
+    <input id="tenure" type="number" placeholder="0 - 10" min="0" max="10">
+    <input id="balance" type="number" placeholder="0 - 250000" min="0" max="250000">
+    <input id="products" type="number" placeholder="1 - 4" min="1" max="4">
+    <input id="salary" type="number" placeholder="10000 - 200000" min="10000" max="200000">
 
-<div class="row">
-    <div class="col-md-4 mb-3">
-        <label>Credit Score</label>
-        <input type="number" name="CreditScore" class="form-control">
+    <select id="gender">
+        <option>Male</option>
+        <option>Female</option>
+    </select>
+
+    <select id="geography">
+        <option>France</option>
+        <option>Germany</option>
+        <option>Spain</option>
+    </select>
+
+    <button onclick="predict()">Predict</button>
+
+    <div id="result"></div>
+
+    <div style="max-width: 400px; margin: 30px auto;">
+        <canvas id="chart"></canvas>
     </div>
 
-    <div class="col-md-4 mb-3">
-        <label>Age</label>
-        <input type="number" name="Age" class="form-control">
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <label>Tenure</label>
-        <input type="number" name="Tenure" class="form-control">
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-4 mb-3">
-        <label>Balance</label>
-        <input type="number" name="Balance" class="form-control">
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <label>Products</label>
-        <input type="number" name="NumOfProducts" class="form-control">
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <label>Salary</label>
-        <input type="number" name="EstimatedSalary" class="form-control">
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6 mb-3">
-        <label>Gender</label>
-        <select name="Gender" class="form-control">
-            <option>Male</option>
-            <option>Female</option>
-        </select>
-    </div>
-
-    <div class="col-md-6 mb-3">
-        <label>Geography</label>
-        <select name="Geography" class="form-control">
-            <option>France</option>
-            <option>Germany</option>
-            <option>Spain</option>
-        </select>
-    </div>
-</div>
-
-<div class="text-center">
-    <button onclick="predictChurn()" class="btn btn-primary w-50">Predict</button>
-</div>
-
-<div class="text-center mt-3">
-    <div class="spinner-border text-primary spinner" id="loading"></div>
-</div>
-
-</div>
-</div>
-
-<div class="container text-center mt-4">
-    <div id="result" class="p-3 rounded"></div>
-</div>
-
-<div class="container mt-4">
-    <canvas id="gaugeChart"></canvas>
-</div>
-
-<div class="container mt-4">
     <div id="explanation"></div>
 </div>
 
 <script>
-
 let chart;
 
-function toggleMode(){
-    document.body.classList.toggle("dark");
-    document.body.classList.toggle("light");
+function toggleMode() {
+    document.body.classList.toggle("dark-mode");
+    document.body.classList.toggle("light-mode");
 }
 
-function predictChurn(){
-    document.getElementById("loading").style.display = "block";
+function validateInputs(data) {
+    if (data.CreditScore < 300 || data.CreditScore > 900) return "Invalid Credit Score";
+    if (data.Age < 18 || data.Age > 100) return "Invalid Age";
+    if (data.Tenure < 0 || data.Tenure > 10) return "Invalid Tenure";
+    if (data.Balance < 0) return "Invalid Balance";
+    if (data.NumOfProducts < 1 || data.NumOfProducts > 4) return "Invalid Products";
+    if (data.EstimatedSalary < 10000) return "Invalid Salary";
+    return null;
+}
+
+function predict() {
 
     const data = {
-        CreditScore: document.querySelector('[name="CreditScore"]').value,
-        Age: document.querySelector('[name="Age"]').value,
-        Tenure: document.querySelector('[name="Tenure"]').value,
-        Balance: document.querySelector('[name="Balance"]').value,
-        NumOfProducts: document.querySelector('[name="NumOfProducts"]').value,
-        EstimatedSalary: document.querySelector('[name="EstimatedSalary"]').value,
-        Gender: document.querySelector('[name="Gender"]').value,
-        Geography: document.querySelector('[name="Geography"]').value
+        CreditScore: +creditScore.value,
+        Age: +age.value,
+        Tenure: +tenure.value,
+        Balance: +balance.value,
+        NumOfProducts: +products.value,
+        EstimatedSalary: +salary.value,
+        Gender: gender.value,
+        Geography: geography.value
     };
 
-    fetch('/predict_churn',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(data)
+    let error = validateInputs(data);
+    if (error) {
+        alert(error);
+        return;
+    }
+
+    fetch("/predict_churn", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
     })
-    .then(res=>res.json())
-    .then(res=>{
-        document.getElementById("loading").style.display = "none";
+    .then(res => res.json())
+    .then(data => {
 
-        if(res.error){
-            document.getElementById("result").innerHTML = res.error;
-            return;
-        }
-
-        let prob = res.Churn_Probability * 100;
-
-        // Color result
-        let color = res.Churn_Prediction==1 ? "red" : "green";
-        let text = res.Churn_Prediction==1 ? "Customer will CHURN" : "Customer will STAY";
-
+        // RESULT TEXT
         document.getElementById("result").innerHTML =
-            "<h3 style='color:"+color+"'>" + text + "</h3>" +
-            "<p>Probability: "+prob.toFixed(2)+"%</p>";
+            data.Churn_Prediction === 1
+            ? "<span style='color:red'>Customer will CHURN</span>"
+            : "<span style='color:green'>Customer is SAFE</span>";
 
-        // Chart
-        if(chart) chart.destroy();
-        chart = new Chart(document.getElementById('gaugeChart'),{
-            type:'doughnut',
-            data:{
-                datasets:[{
-                    data:[prob,100-prob]
+        // CHART FIXED SIZE
+        if (chart) chart.destroy();
+
+        chart = new Chart(document.getElementById("chart"), {
+            type: "doughnut",
+            data: {
+                labels: ["Churn", "Safe"],
+                datasets: [{
+                    data: [data.Churn_Probability, 1 - data.Churn_Probability]
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true
             }
         });
 
-        // Explanation (simple logic)
-        let explanation = "Main factors: ";
-        if(data.CreditScore < 500) explanation += "Low Credit Score, ";
-        if(data.Age > 50) explanation += "High Age, ";
-        if(data.Balance > 100000) explanation += "High Balance, ";
-
-        document.getElementById("explanation").innerHTML =
-            "<b>Why churn?</b><br>" + explanation;
-
-    })
-    .catch(()=>{
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("result").innerHTML = "Server error";
+        // EXPLANATION FIX
+        const explanationDiv = document.getElementById("explanation");
+        explanationDiv.innerHTML = `
+            <h3>Why churn?</h3>
+            <p>${data.explanation}</p>
+        `;
     });
 }
-
 </script>
 
 </body>
