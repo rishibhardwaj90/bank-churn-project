@@ -1,25 +1,22 @@
 body {
     font-family: Arial, sans-serif;
-    background: #0f172a;
+    background: #1e293b;
     color: white;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
 }
-
 .container {
-    background: #1e293b;
+    background: #334155;
     padding: 30px;
     border-radius: 12px;
     width: 350px;
     text-align: center;
 }
-
 h1 {
     margin-bottom: 20px;
 }
-
 input, select {
     width: 100%;
     padding: 10px;
@@ -27,7 +24,6 @@ input, select {
     border: none;
     border-radius: 6px;
 }
-
 button {
     width: 100%;
     padding: 12px;
@@ -38,11 +34,9 @@ button {
     font-size: 16px;
     cursor: pointer;
 }
-
 button:hover {
     background: #16a34a;
 }
-
 #result {
     margin-top: 20px;
 }
